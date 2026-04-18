@@ -1,0 +1,116 @@
+# ============================================
+# Niko AI Assistant - Server Configuration
+# ============================================
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  # WebSocket path
+  ws_path: "/ws"
+  # IP address that ESP32 uses to reach this server
+  # (the local network IP of the machine running this server)
+  device_ip: "${DEVICE_IP:-172.20.10.10}"
+
+# ============================================
+# ASR (Automatic Speech Recognition)
+# ============================================
+asr:
+  # Options: funasr (local, Chinese) | whisper (local, multilingual) | aliyun (cloud)
+  provider: "funasr"
+
+  funasr:
+    # Model options:
+    #   paraformer-zh - Chinese offline, best accuracy
+    #   SenseVoiceSmall - Multilingual, supports emotion detection
+    model: "paraformer-zh"
+    # cuda (GPU) or cpu
+    device: "cuda"
+
+  whisper:
+    model: "large-v3"
+    device: "cuda"
+    language: "en"
+
+  aliyun:
+    api_key: "${DASHSCOPE_API_KEY}"
+    model: "fun-asr-realtime"
+    language: "en"
+
+# ============================================
+# LLM (Large Language Model)
+# ============================================
+llm:
+  # Options: ollama (local) | cloud
+  provider: "ollama"
+
+  system_prompt: |
+    You are Niko, an intelligent AI voice assistant installed on a wearable device.
+    You have access to a camera and an ultrasonic distance sensor.
+
+    Rules:
+    - Answer user questions naturally and conversationally
+    - When sensor data is provided, incorporate it into your response
+    - Keep responses concise, no more than 3 sentences
+    - Respond in the same language the user speaks
+
+  ollama:
+    url: "http://localhost:11434"
+    model: "gemma4:26b"
+
+  cloud:
+    url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    api_key: "${DASHSCOPE_API_KEY}"
+    model: "qwen3.5-flash"
+
+# ============================================
+# TTS (Text-to-Speech)
+# ============================================
+tts:
+  # Options: edge (Microsoft Edge TTS, online free) | pyttsx3 (local offline, system voices)
+  provider: "edge"
+
+  edge:
+    # English voices: en-US-GuyNeural, en-US-JennyNeural, en-US-AriaNeural
+    # Chinese voices: zh-CN-XiaoxiaoNeural, zh-CN-YunxiNeural, zh-CN-YunyangNeural
+    voice: "en-US-GuyNeural"
+    # Speed adjustment: -50% to +50%
+    rate: "+0%"
+
+  pyttsx3:
+    # Local offline TTS using system voices (SAPI5 on Windows, espeak on Linux)
+    # voice_id: leave empty to use system default, or set specific voice ID
+    # Run "python -c \"import pyttsx3; e=pyttsx3.init(); print([(v.id,v.name) for v in e.getProperty('voices')])\""
+    # to list available voices on your system
+    voice_id: ""
+    # Speech rate (words per minute)
+    rate: 150
+
+# ============================================
+# Vision (Multimodal LLM)
+# ============================================
+vision:
+  # Options: ollama (local) | cloud
+  provider: "ollama"
+
+  ollama:
+    url: "http://localhost:11434"
+    model: "gemma4:26b"
+
+  cloud:
+    url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    api_key: "${DASHSCOPE_API_KEY}"
+    model: "qwen3.5-omni-flash"
+
+# ============================================
+# Audio Parameters (usually no need to change)
+# ============================================
+audio:
+  # Audio from ESP32
+  input_sample_rate: 16000
+  input_channels: 1
+  input_frame_duration: 60   # ms
+
+  # Audio sent back to ESP32
+  output_sample_rate: 16000
+  output_channels: 1
+  output_frame_duration: 60  # ms

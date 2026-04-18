@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niko AI Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #ededed;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* Top Navigation Bar - WeChat style */
+        .navbar {
+            background: #2e2e2e;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 17px;
+            font-weight: 500;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 12px;
+        }
+
+        /* Cards - WeChat style white panels */
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .card-header h2 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+        }
+        .card-body { padding: 16px; }
+
+        /* Status Badge */
+        .badge {
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 400;
+        }
+        .badge-online { background: #e8f5e9; color: #43a047; }
+        .badge-offline { background: #fce4ec; color: #e53935; }
+
+        /* Camera */
+        #camera-img {
+            width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            background: #f5f5f5;
+            border-radius: 6px;
+            display: block;
+        }
+        .no-image {
+            width: 100%;
+            height: 240px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0b0b0;
+            font-size: 15px;
+        }
+        .vision-desc {
+            margin-top: 12px;
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            display: none;
+        }
+        .vision-desc.active { display: block; }
+
+        /* Distance Display */
+        .distance-wrapper {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .distance-num {
+            font-size: 56px;
+            font-weight: 300;
+            color: #07c160;
+            line-height: 1;
+        }
+        .distance-unit {
+            font-size: 18px;
+            color: #999;
+            margin-left: 4px;
+        }
+        .distance-bar-wrap {
+            margin: 16px 0 4px;
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .distance-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease, background 0.4s ease;
+            background: #07c160;
+        }
+        .distance-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #bbb;
+        }
+
+        /* Buttons - WeChat green style */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            padding: 12px 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-green {
+            background: #07c160;
+            color: #fff;
+        }
+        .btn-green:hover { background: #06ad56; }
+        .btn-green:active { background: #059a4c; }
+        .btn-outline {
+            background: #fff;
+            color: #07c160;
+            border: 1px solid #07c160;
+        }
+        .btn-outline:hover { background: #f0faf4; }
+
+        /* Tip text */
+        .tip {
+            text-align: center;
+            font-size: 12px;
+            color: #b0b0b0;
+            padding: 8px 16px 14px;
+        }
+
+        /* Log Panel */
+        .log-container {
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #fafafa;
+        }
+        .log-time { color: #bbb; }
+        .log-info { color: #07c160; }
+        .log-warn { color: #ff9800; }
+        .log-error { color: #e53935; }
+
+        /* Grid layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 640px) {
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">Niko AI Assistant</div>
+
+    <div class="container">
+        <div class="grid-2">
+            <!-- Camera Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Camera</h2>
+                    <span id="cam-status" class="badge badge-offline">Offline</span>
+                </div>
+                <div class="card-body">
+                    <div class="no-image" id="no-image">No image captured yet</div>
+                    <img id="camera-img" style="display:none" />
+                    <div class="vision-desc" id="vision-desc"></div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-green" onclick="takePhoto()">Take Photo</button>
+                </div>
+                <div class="tip">Voice: say "look" / "photo" / "camera"</div>
+            </div>
+
+            <!-- Distance Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Ultrasonic Sensor</h2>
+                    <span id="dist-status" class="badge badge-offline">Offline</span>
+                </div>
+                <div class="card-body">
+                    <div class="distance-wrapper">
+                        <span id="distance-value" class="distance-num">--</span>
+                        <span class="distance-unit">mm</span>
+                    </div>
+                    <div class="distance-bar-wrap">
+                        <div class="distance-bar-fill" id="distance-bar-fill" style="width:0%"></div>
+                    </div>
+                    <div class="distance-labels">
+                        <span>0</span><span>2500</span><span>5000 mm</span>
+                    </div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-green" onclick="readDistance()">Read Distance</button>
+                </div>
+                <div class="tip">Voice: say "distance" / "how far"</div>
+            </div>
+        </div>
+
+        <!-- Log Card -->
+        <div class="card">
+            <div class="card-header">
+                <h2>Activity Log</h2>
+            </div>
+            <div class="card-body">
+                <div class="log-container" id="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        let mcpIdCounter = 1;
+
+        function log(msg, level = 'info') {
+            const el = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            el.innerHTML += `<div class="log-entry"><span class="log-time">[${time}]</span> <span class="log-${level}">${msg}</span></div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function mcpCall(toolName, args = {}) {
+            const id = mcpIdCounter++;
+            try {
+                const resp = await fetch(`${API}/api/mcp/call`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tool: toolName, arguments: args, id })
+                });
+                return await resp.json();
+            } catch (e) {
+                log(`MCP call failed: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function takePhoto() {
+            log('Taking photo...');
+            const data = await mcpCall('self.camera.take_photo', { question: 'Describe the scene, focus on objects and surroundings' });
+            try {
+                const imgResp = await fetch(`${API}/api/latest_image`);
+                const imgData = await imgResp.json();
+                if (imgData.image) {
+                    document.getElementById('no-image').style.display = 'none';
+                    const img = document.getElementById('camera-img');
+                    img.src = 'data:image/jpeg;base64,' + imgData.image;
+                    img.style.display = 'block';
+                    document.getElementById('cam-status').className = 'badge badge-online';
+                    document.getElementById('cam-status').textContent = 'Online';
+                    log('Photo captured');
+                    if (imgData.description) {
+                        const desc = document.getElementById('vision-desc');
+                        desc.textContent = imgData.description;
+                        desc.classList.add('active');
+                        log('Vision: ' + imgData.description);
+                    }
+                } else {
+                    log('No image yet, device may still be processing', 'warn');
+                }
+            } catch (e) {
+                log('Failed to get image: ' + e.message, 'error');
+            }
+            if (data && data.result && typeof data.result === 'string') {
+                const desc = document.getElementById('vision-desc');
+                desc.textContent = data.result;
+                desc.classList.add('active');
+            } else if (data && data.error) {
+                log('Photo failed: ' + data.error, 'error');
+            }
+        }
+
+        async function readDistance() {
+            const data = await mcpCall('self.ultrasound.get_distance', {});
+            if (data && data.result) {
+                let result = data.result;
+                if (typeof result === 'string') {
+                    try { result = JSON.parse(result); } catch(e) {}
+                }
+                const dist = result.distance_mm;
+                if (dist !== undefined) {
+                    document.getElementById('distance-value').textContent = dist;
+                    document.getElementById('dist-status').className = 'badge badge-online';
+                    document.getElementById('dist-status').textContent = 'Online';
+                    const pct = Math.min(dist / 5000 * 100, 100);
+                    const fill = document.getElementById('distance-bar-fill');
+                    fill.style.width = pct + '%';
+                    if (dist < 300) fill.style.background = '#e53935';
+                    else if (dist < 1000) fill.style.background = '#ff9800';
+                    else fill.style.background = '#07c160';
+                    log(`Distance: ${dist} mm`);
+                }
+            } else if (data && data.error) {
+                log('Distance read failed: ' + data.error, 'error');
+            }
+        }
+
+        log('Monitor loaded, waiting for device...');
+
+        // Auto-poll latest image every 2s
+        setInterval(async () => {
+            try {
+                const resp = await fetch(`${API}/api/latest_image`);
+                const data = await resp.json();
+                if (data.image) {
+                    document.getElementById('no-image').style.display = 'none';
+                    const img = document.getElementById('camera-img');
+                    const newSrc = 'data:image/jpeg;base64,' + data.image;
+                    if (img.src !== newSrc) {
+                        img.src = newSrc;
+                        img.style.display = 'block';
+                        document.getElementById('cam-status').className = 'badge badge-online';
+                        document.getElementById('cam-status').textContent = 'Online';
+                        if (data.description) {
+                            const desc = document.getElementById('vision-desc');
+                            desc.textContent = data.description;
+                            desc.classList.add('active');
+                        }
+                    }
+                }
+            } catch(e) {}
+        }, 2000);
+    </script>
+</body>
+</html>

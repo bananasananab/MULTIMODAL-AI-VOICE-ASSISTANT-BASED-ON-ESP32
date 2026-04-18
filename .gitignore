@@ -1,0 +1,29 @@
+# Secrets
+.env
+
+# Config with potential secrets
+# config.yaml    # uncomment if you don't want to track config changes
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+.vs/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ESP32 build artifacts and caches
+esp32/*/build/
+esp32/*/out/
+esp32/*/.cache/
+esp32/*/managed_components/
+
+# Claude
+.claude/
